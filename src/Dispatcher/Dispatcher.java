@@ -26,7 +26,7 @@ public class Dispatcher implements DispatcherInterface {
 		
 	public static void main(String[] args) throws Exception
 	{
-		Dispatcher dispatcher = new Dispatcher(Integer.valueOf(args[0]),Integer.valueOf(args[0]));
+		Dispatcher dispatcher = new Dispatcher(Integer.valueOf(args[0]),Integer.valueOf(args[1]));
 		dispatcher.run();
 	}	
 	
