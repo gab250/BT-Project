@@ -19,13 +19,15 @@ import Dispatcher.DispatcherInterface;
 public class ServerNode implements ServerNodeInterface {
 
 	private DispatcherInterface dispatcher_;
-	private String name_;
+	private String name_, dispatcherHostName_;
 	private int id_, dispatcherRMIPort_, localRMIPort_, port_;
 	
 	public static void main(String[] args)
 	{
-		ServerNode serverNode = new ServerNode(args[0],args[1],Integer.valueOf(args[2]),Integer.valueOf(args[3]), Integer.valueOf(args[4]));
+		System.out.println("Starting node...");
 		
+		ServerNode serverNode = new ServerNode(args[0],args[1],Integer.valueOf(args[2].trim()),Integer.valueOf(args[3].trim()), Integer.valueOf(args[4].trim()));
+
 		try 
 		{
 			serverNode.run();
@@ -40,13 +42,13 @@ public class ServerNode implements ServerNodeInterface {
 	public ServerNode(String hostName, String name, int localRMIPort, int port, int dispatcherRMIPort)
 	{
 		name_ = name;
-		dispatcher_ = loadDispatcherStub(hostName);
+		dispatcherHostName_ = hostName;
 		localRMIPort_ = localRMIPort;
 		dispatcherRMIPort_ = dispatcherRMIPort;
 		port_= port;
     }
 	
-	public void Report(Map<String,Map<String,Float>> result)
+	public void Report(Map<String,Map<String,Map<String,Float>>> result)
 	{
 		try 
 		{
@@ -60,6 +62,8 @@ public class ServerNode implements ServerNodeInterface {
 	
 	private void run() throws Exception
 	{
+		System.out.println("Started Running..");
+		
 		if(System.getSecurityManager() ==  null)
 		{
 			System.setSecurityManager(new SecurityManager());
@@ -79,11 +83,16 @@ public class ServerNode implements ServerNodeInterface {
 		}
 		catch(Exception e)
 		{
-			System.err.println("Erreur: " + e.getMessage());
+			System.err.println("Unknown Error In Regsitring node: " + e.getMessage());
 		}
+		
+		//Get dispatcher stub
+		dispatcher_ = loadDispatcherStub(dispatcherHostName_);
 		
 		//Register current Node to dispatcher
 		id_ = dispatcher_.Register(InetAddress.getLocalHost().getHostName(), name_, localRMIPort_);
+		
+		System.out.println("Got id : " + Integer.toString(id_));
 		
 		//Register failed
 		if(id_ <= 0)
@@ -110,22 +119,36 @@ public class ServerNode implements ServerNodeInterface {
 	
 	private DispatcherInterface loadDispatcherStub(String hostname)
 	{
+		System.out.println("Fetching Dispatcher hostName : " + hostname + " port: " + Integer.toString(dispatcherRMIPort_));
+		
 		DispatcherInterface stub = null;
 		
 		try 
 		{
 			Registry registry = LocateRegistry.getRegistry(hostname,dispatcherRMIPort_);
+			
+			if(registry!=null)
+			{
+				System.out.println("Registry is not null, NAMES : " + registry.list());
+			}
+			
+			System.out.println("Looking up");
+			
 			stub = (DispatcherInterface) registry.lookup("dispatcher");
+			
+			System.out.println("Finished looking up");
 			
 		} 
 		catch (RemoteException e) 
 		{
-			
+			System.err.println("Erreur in loadDispatcherStub : " + e.getMessage());
 		} 
 		catch (NotBoundException e) 
 		{
-			
+			System.err.println("Erreur in loadDispatcherStub : " + e.getMessage());
 		}
+		
+		System.out.println("Done Fetching Dispatcher");
 		
 		return stub;
 	}

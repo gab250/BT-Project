@@ -18,7 +18,7 @@ import Server.ServerNodeInterface;
 
 public class Dispatcher implements DispatcherInterface {
 	
-	static private Map<Integer,Map<String,Map<String,Float>>> results_;
+	static private Map<Integer,Map<String,Map<String,Map<String,Float>>>> results_;
 	static private Lock lock_;
 	
 	private Map<Integer,ServerNodeInterface> Workers_; 
@@ -26,14 +26,14 @@ public class Dispatcher implements DispatcherInterface {
 		
 	public static void main(String[] args) throws Exception
 	{
-		Dispatcher dispatcher = new Dispatcher(Integer.valueOf(args[0]),Integer.valueOf(args[1]));
+		Dispatcher dispatcher = new Dispatcher(Integer.valueOf(args[0].trim()),Integer.valueOf(args[1].trim()));
 		dispatcher.run();
 	}	
 	
 	public Dispatcher(int portRMI, int portDispatcher)
 	{
 		Workers_ = new HashMap<Integer,ServerNodeInterface>();
-		results_ = new HashMap<Integer,Map<String,Map<String,Float>>>();
+		results_ = new HashMap<Integer,Map<String,Map<String,Map<String,Float>>>>();
 		lock_ = new ReentrantLock();
 		portRMI_ = portRMI;
 		portDispatcher_ = portDispatcher;
@@ -102,19 +102,19 @@ public class Dispatcher implements DispatcherInterface {
 	}
 
 	@Override
-	public void Report(int worker, Map<String,Map<String,Float>> result) throws RemoteException 
+	public void Report(int worker, Map<String,Map<String,Map<String,Float>>> result) throws RemoteException 
 	{
 		PutResult(worker,result);
 	}
 
 	@Override
-	public Map<String,Map<String,Float>> Process(Vector<String> workLoad) throws RemoteException 
+	public Map<String,Map<String,Map<String,Float>>> Process(Vector<String> workLoad) throws RemoteException 
 	{
 		long start = System.nanoTime();
 	
 		//Clear results 
-		results_ = new HashMap<Integer,Map<String,Map<String,Float>>>();
-		Map<String,Map<String,Float>> combinedResults = new HashMap<String,Map<String,Float>>();
+		results_ = new HashMap<Integer,Map<String,Map<String,Map<String,Float>>>>();
+		Map<String, Map<String,Map<String,Float>>> combinedResults = new HashMap<String,Map<String,Map<String,Float>>>();
 			
 		//Check livelyness of workers
 		Vector<Integer> aliveWorkers = new Vector<Integer>();
@@ -132,7 +132,7 @@ public class Dispatcher implements DispatcherInterface {
 			{
 				workDispatchingJournal.put(aliveWorkers.get(i), new Vector<String>());
 			}
-
+			
 			//Split work
 			Vector<Vector<String>> workLoads = new Vector<Vector<String>>();
 		    int workLoadSize = workLoad.size()/aliveWorkers.size();
@@ -146,17 +146,17 @@ public class Dispatcher implements DispatcherInterface {
 		    		workLoads.get(i).add(workLoad.remove(0));
 		    	}
 		    }
-				
+		    		    
+		    System.out.println("Alive Workers : " + Integer.toString(aliveWorkers.size()) + " Workers : " + Integer.toString(Workers_.size()));
+		    System.out.println("Workload 1 " + Integer.toString(workLoads.get(0).size()) + "  Workload 2  " + Integer.toString(workLoads.get(1).size()));
+		    		    
 		    //Send workloads to Server Nodes
 		    try
 		    {
   				for(int i=0; i<aliveWorkers.size() ; ++i)
 				{
-					for(int j=0; j<workLoads.get(i).size(); ++i)
-					{
-						Workers_.get(aliveWorkers.get(i)).Process(workLoads.get(j));
-						workDispatchingJournal.put(aliveWorkers.get(i),workLoads.get(j));
-					}
+						Workers_.get(aliveWorkers.get(i)).Process(workLoads.get(i));
+						workDispatchingJournal.put(aliveWorkers.get(i),workLoads.get(i));
 				}
 		    }
 		    catch(RemoteException e)
@@ -167,14 +167,14 @@ public class Dispatcher implements DispatcherInterface {
      		//Wait for completion 		
        		do
        		{
-       			
+       			       			
        		}while(GetResultSize() < workDispatchingJournal.size());
        		
 		    //Merge results
        		for(Integer key : results_.keySet())
        		{
        			combinedResults.putAll(results_.get(key));
-       		}
+    		}
 		}
 		else
 		{
@@ -197,6 +197,8 @@ public class Dispatcher implements DispatcherInterface {
 
 		try
 		{
+			System.out.println("PortDispatcher : " + Integer.toString(portDispatcher_) + " Port RMI : " +  Integer.toString(portRMI_));
+			
 			DispatcherInterface stub = (DispatcherInterface) UnicastRemoteObject.exportObject(this, portDispatcher_);
 			Registry registry = LocateRegistry.getRegistry(portRMI_);
 			registry.rebind("dispatcher", stub);
@@ -241,7 +243,7 @@ public class Dispatcher implements DispatcherInterface {
 		return size;
 	}
 
-	private void PutResult(int workerID, Map<String,Map<String,Float>> result)
+	private void PutResult(int workerID, Map<String,Map<String,Map<String,Float>>> result)
 	{
 		lock_.lock();
 		

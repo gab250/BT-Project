@@ -22,14 +22,18 @@ public class Client
 		Client client = new Client();
 		client.loadDispatcherStub(args[0],Integer.valueOf(args[1]));
 		
+		System.out.println("Fetching Symbols...");
+		
 		Vector<String> workLoad = YahooAPI.getNYSESymbols();
 		
-		client.Process(workLoad);
+		System.out.println("Symbols retreived");
+		
+		System.out.println(client.Process(workLoad).toString());
 	}
 	
-	public Map<String,Map<String,Float>> Process(Vector<String> workLoad)
+	public Map<String,Map<String,Map<String,Float>>> Process(Vector<String> workLoad)
 	{
-		Map<String,Map<String,Float>> result=null;
+		Map<String,Map<String,Map<String,Float>>> result=null;
 		String formatedResult="";
 		
 		try 

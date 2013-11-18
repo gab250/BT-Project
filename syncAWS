@@ -1,0 +1,1 @@
+rsync -rav ../BT-Project awshost1:~/

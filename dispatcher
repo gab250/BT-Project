@@ -1,3 +1,1 @@
-java -cp Dispatcher.jar \
-	-Djava.security.policy=policy \
-	Dispatcher.Dispatcher $1 $2
+java -cp Dispatcher.jar -Djava.security.policy=policy Dispatcher.Dispatcher $1 $2

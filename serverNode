@@ -1,3 +1,1 @@
-java -cp Servernode.jar \
--Djava.security.policy=policy \
-Server.ServerNode $1 $2 $3 $4 $5
+java -cp ServerNode.jar -Djava.security.policy=policy Server.ServerNode $1 $2 $3 $4 $5
