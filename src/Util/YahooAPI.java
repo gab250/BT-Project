@@ -14,7 +14,7 @@ import java.util.Vector;
 
 public class YahooAPI 
 {
-	public static Map<String,Map<String,Float>> getHistoricalData(String in_strSymbol, String in_strStartDate, String in_strEndDate)
+	public static Map<String,Map<String,Float>> getHistoricalData(String in_strSymbol, String in_strStartDate, String in_strEndDate) throws IOException
 	{
 		//Time parameters
 		String strTimeParam =
@@ -54,8 +54,8 @@ public class YahooAPI
 		} 
         catch (IOException e) 
         {
-        	e.printStackTrace();
-		}
+        	throw e;
+       	}
         
         String[] keys = csv.get(0).split(",");
         
@@ -130,16 +130,45 @@ public class YahooAPI
 		URL url;
 	    InputStream is = null;
 	    BufferedReader br;
+	    String currentSymbol;
 		
 		try 
         {
             url = new URL(strUrl);
 			is = url.openStream();  // throws an IOException
 		    br = new BufferedReader(new InputStreamReader(is));
-		   
+		   	    
 		    while ((line = br.readLine()) != null) 
 		    {
-		    	symbols.add(line.split(",")[0]);
+		    	currentSymbol = line.split(",")[0];
+		    	
+		    	
+		    	if(currentSymbol.contains(" "))
+		    	{
+		    		currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	
+		    	if(currentSymbol.contains("^"))
+		    	{
+		    		currentSymbol = currentSymbol.replace('^', ' ');
+		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	else if(currentSymbol.contains("/"))
+		    	{
+		    		currentSymbol = currentSymbol.replace('/', ' ');
+		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	else if(currentSymbol.contains("$"))
+		    	{
+		    		currentSymbol = currentSymbol.replace('$', ' ');
+		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	
+		    	if(!symbols.contains(currentSymbol) && !currentSymbol.equals("\"Symbol\""))
+		    	{
+		    		symbols.add(currentSymbol);
+		    	}
+		    	
 	        }
 	  
         } 
@@ -152,7 +181,29 @@ public class YahooAPI
 			e.printStackTrace();
 		}
 		
-		symbols.remove(0);
+		//Test for ^,$,/
+		for(int i=0; i<symbols.size() ; ++i)
+		{
+			if(symbols.get(i).contains("^"))
+			{
+				System.err.println("Symbol Containing ^ : " + symbols.get(i));
+			}
+			
+			if(symbols.get(i).contains("/"))
+			{
+				System.err.println("Symbol Containing / : " + symbols.get(i));
+			}
+			
+			if(symbols.get(i).contains("$"))
+			{
+				System.err.println("Symbol Containing $ : " + symbols.get(i));
+			}
+			
+			if(symbols.get(i).contains(" "))
+			{
+				System.err.println("Symbol Containing ' ' : " + symbols.get(i));
+			}
+		}
 		
 		return symbols;
 	}

@@ -62,8 +62,6 @@ public class ServerNode implements ServerNodeInterface {
 	
 	private void run() throws Exception
 	{
-		System.out.println("Started Running..");
-		
 		if(System.getSecurityManager() ==  null)
 		{
 			System.setSecurityManager(new SecurityManager());
@@ -92,14 +90,14 @@ public class ServerNode implements ServerNodeInterface {
 		//Register current Node to dispatcher
 		id_ = dispatcher_.Register(InetAddress.getLocalHost().getHostName(), name_, localRMIPort_);
 		
-		System.out.println("Got id : " + Integer.toString(id_));
-		
 		//Register failed
 		if(id_ <= 0)
 		{
 			System.err.println("Couldn't register, closing node...");
 			System.exit(-1);
 		}
+		
+		System.out.println("Node " + Integer.toString(id_)  +" up");
 		
 	}
 		
@@ -119,25 +117,12 @@ public class ServerNode implements ServerNodeInterface {
 	
 	private DispatcherInterface loadDispatcherStub(String hostname)
 	{
-		System.out.println("Fetching Dispatcher hostName : " + hostname + " port: " + Integer.toString(dispatcherRMIPort_));
-		
 		DispatcherInterface stub = null;
 		
 		try 
 		{
 			Registry registry = LocateRegistry.getRegistry(hostname,dispatcherRMIPort_);
-			
-			if(registry!=null)
-			{
-				System.out.println("Registry is not null, NAMES : " + registry.list());
-			}
-			
-			System.out.println("Looking up");
-			
 			stub = (DispatcherInterface) registry.lookup("dispatcher");
-			
-			System.out.println("Finished looking up");
-			
 		} 
 		catch (RemoteException e) 
 		{
@@ -147,8 +132,6 @@ public class ServerNode implements ServerNodeInterface {
 		{
 			System.err.println("Erreur in loadDispatcherStub : " + e.getMessage());
 		}
-		
-		System.out.println("Done Fetching Dispatcher");
 		
 		return stub;
 	}

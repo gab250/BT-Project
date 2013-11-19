@@ -18,7 +18,6 @@ public class Client
 	
 	public static void main(String[] args)
 	{
-		
 		Client client = new Client();
 		client.loadDispatcherStub(args[0],Integer.valueOf(args[1]));
 		

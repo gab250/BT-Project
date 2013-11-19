@@ -163,18 +163,43 @@ public class Dispatcher implements DispatcherInterface {
 		    {
 		    	System.err.println("Problem calling process on Node  : " + e.getMessage());
 		    }
-		         		
-     		//Wait for completion 		
-       		do
-       		{
-       			       			
-       		}while(GetResultSize() < workDispatchingJournal.size());
-       		
-		    //Merge results
-       		for(Integer key : results_.keySet())
-       		{
-       			combinedResults.putAll(results_.get(key));
-    		}
+		    
+		    int nbOfSeconds = 0;
+		    
+		    try 
+		    {
+	     		//Wait for completion 		
+	       		do
+	       		{
+	       			Thread.sleep(1000);
+	       			nbOfSeconds++;
+	       			
+				}while((GetResultSize() < workDispatchingJournal.size()) && (nbOfSeconds < 180));
+	        } 
+		    catch (InterruptedException e) 
+		    {
+				e.printStackTrace();
+			}
+   			
+		    System.out.println("Result size : " + Integer.toString(GetResultSize()) + " workJournal Size : " + Integer.toString(workDispatchingJournal.size()));
+		    
+		    if(GetResultSize() == workDispatchingJournal.size())
+		    {
+			    //Merge results
+	       		for(Integer key : results_.keySet())
+	       		{
+	       			combinedResults.putAll(results_.get(key));
+	    		}
+		    }
+		    else if(GetResultSize() > workDispatchingJournal.size())
+		    {
+		    	System.err.println("Error Result size greater than workJournal size "  + Integer.toString(GetResultSize()) + Integer.toString(workDispatchingJournal.size()));
+		    }
+		    else
+		    {
+		    	System.out.println("Some Nodes aren't responding fuckem im out!");
+		    	combinedResults = null;
+		    }
 		}
 		else
 		{
