@@ -1,0 +1,1 @@
+kill $(ps -e | grep -E 'java' | awk '{print $1}')

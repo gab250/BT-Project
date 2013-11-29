@@ -1,0 +1,9 @@
+#Removing old log files
+rm -f ../log/*
+
+#Starting dispatcher
+./dispatcher 5001 3000 >& ../log/dispatcherLog &
+
+#Starting nodes
+./serverNodeInit $1
+ $2

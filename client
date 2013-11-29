@@ -1,1 +1,0 @@
-java -cp Client.jar -Djava.security.policy=policy Client.Client $1 $2 

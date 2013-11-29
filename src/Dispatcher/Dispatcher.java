@@ -7,6 +7,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,6 +28,7 @@ public class Dispatcher implements DispatcherInterface {
 		
 	public static void main(String[] args) throws Exception
 	{
+		System.setProperty("java.rmi.server.hostname", "54.213.89.227");
 		Dispatcher dispatcher = new Dispatcher(Integer.valueOf(args[0].trim()),Integer.valueOf(args[1].trim()));
 		dispatcher.run();
 	}	
@@ -108,8 +111,14 @@ public class Dispatcher implements DispatcherInterface {
 	}
 
 	@Override
-	public Map<String,Map<String,Map<String,Float>>> Process(Vector<String> workLoad) throws RemoteException 
+	public int Process(Vector<String> workLoad) throws RemoteException 
 	{
+		//Get time
+		Calendar cal = Calendar.getInstance();
+    	SimpleDateFormat currentTime = new SimpleDateFormat("y:M:dd:HH:mm:ss");
+		
+		System.out.println("[ Starting job @ " + currentTime.format(Calendar.getInstance().getTime()) + " ]");
+		
 		long start = System.nanoTime();
 	
 		//Clear results 
@@ -146,9 +155,6 @@ public class Dispatcher implements DispatcherInterface {
 		    		workLoads.get(i).add(workLoad.remove(0));
 		    	}
 		    }
-		    		    
-		    System.out.println("Alive Workers : " + Integer.toString(aliveWorkers.size()) + " Workers : " + Integer.toString(Workers_.size()));
-		    System.out.println("Workload 1 " + Integer.toString(workLoads.get(0).size()) + "  Workload 2  " + Integer.toString(workLoads.get(1).size()));
 		    		    
 		    //Send workloads to Server Nodes
 		    try
@@ -209,10 +215,25 @@ public class Dispatcher implements DispatcherInterface {
 		long end = System.nanoTime();
 		
 		System.out.println("Execution time : " + Float.toString((float)((end-start)/1000000.0)) + " ms");
+				
+		System.out.println("[ Finishing job @ " + currentTime.format(Calendar.getInstance().getTime()) + " ]");
 		
-		return combinedResults;
+		if(combinedResults != null)
+		{
+			return combinedResults.size();
+		}
+		else
+		{
+			return 0;
+		}
 	}
 	
+	@Override
+	public int GetNbOfWorkers() throws RemoteException 
+	{
+		return GetWorkerAlive().size();
+	}
+
 	private void run() throws Exception
 	{
 		if(System.getSecurityManager() ==  null)

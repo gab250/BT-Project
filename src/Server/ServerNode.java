@@ -24,6 +24,8 @@ public class ServerNode implements ServerNodeInterface {
 	
 	public static void main(String[] args)
 	{
+		System.setProperty("java.rmi.server.hostname", "54.213.89.227");
+		
 		System.out.println("Starting node...");
 		
 		ServerNode serverNode = new ServerNode(args[0],args[1],Integer.valueOf(args[2].trim()),Integer.valueOf(args[3].trim()), Integer.valueOf(args[4].trim()));

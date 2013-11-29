@@ -9,5 +9,6 @@ public interface DispatcherInterface extends Remote
 {
 	public int Register(String hostAdress, String workerName, int rmiPort) throws RemoteException;
 	public void Report(int worker,Map<String,Map<String,Map<String,Float>>> result) throws RemoteException;
-	public  Map<String,Map<String,Map<String,Float>>> Process(Vector<String> workLoad) throws RemoteException;
+	public  int Process(Vector<String> workLoad) throws RemoteException;
+	public int GetNbOfWorkers() throws RemoteException;
 }

@@ -21,18 +21,38 @@ public class Client
 		Client client = new Client();
 		client.loadDispatcherStub(args[0],Integer.valueOf(args[1]));
 		
-		System.out.println("Fetching Symbols...");
 		
-		Vector<String> workLoad = YahooAPI.getNYSESymbols();
+		if(args[2].equals("-u"))
+		{
+			System.out.println("Fetching Symbols...");
+			
+			Vector<String> workLoad = YahooAPI.getNYSESymbols();
+			
+			System.out.println("Symbols retreived");
+			
+			int result = client.Process(workLoad);
+			
+			if(result > 0)
+			{
+				System.out.println("Results retreived, number of stocks : " + Integer.toString(result));
+			}
+			else
+			{
+				System.out.println("Dispatcher couldn't job");
+			}
+		}
+		else if(args[2].equals("-n"))
+		{
+			System.out.println("Getting number of workers..");
+			int nbOfWorkers = client.GetNbOfWorkers();
+			System.out.println("Nb of workers : " + Integer.toString(nbOfWorkers));
+		}
 		
-		System.out.println("Symbols retreived");
-		
-		System.out.println(client.Process(workLoad).toString());
 	}
 	
-	public Map<String,Map<String,Map<String,Float>>> Process(Vector<String> workLoad)
+	public int Process(Vector<String> workLoad)
 	{
-		Map<String,Map<String,Map<String,Float>>> result=null;
+		int result=0;
 		String formatedResult="";
 		
 		try 
@@ -46,6 +66,23 @@ public class Client
 		}
 			
 		return result;
+	}
+	
+	public int GetNbOfWorkers()
+	{
+		int nbOfWorkers=0;
+		
+		try 
+		{
+			nbOfWorkers = dispatcher_.GetNbOfWorkers();
+			
+		} 
+		catch (RemoteException e) 
+		{
+			System.err.println("Error in dispatcher : " + e.getMessage());
+		}
+			
+		return nbOfWorkers;
 	}
 	
 	private void loadDispatcherStub(String hostname,int RMIPort)

@@ -1,6 +1,8 @@
 package Server;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -23,6 +25,10 @@ public class WorkUnit implements Runnable
 	@Override
 	public void run() 
 	{
+		//Get time
+    	SimpleDateFormat currentTime = new SimpleDateFormat("y:M:dd:HH:mm:ss");
+		System.out.println("[ Starting work unit @ " + currentTime.format(Calendar.getInstance().getTime()) + " ]");
+		
 		//Results
 		Map<String,Map<String,Map<String,Float>>> results = new HashMap<String,Map<String,Map<String,Float>>>();
 		String start = "2013-10-01";
@@ -52,6 +58,8 @@ public class WorkUnit implements Runnable
 		{
 			System.out.println(problematicSymbol.get(i));
 		}
+		
+		System.out.println("[ Leaving work unit @ " + currentTime.format(Calendar.getInstance().getTime()) + " ]");
 		
 		parent_.Report(results);
 	}		

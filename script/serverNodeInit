@@ -1,0 +1,16 @@
+#!/bin/bash
+
+baseName="Worker"
+portBase="300"
+fileBase="../log/nodeLog"
+
+for ((i=1;i<=$1;i++))
+do
+	WORKERNAME=$baseName$i
+	PORT=$portBase$i
+	FILE=$fileBase$i
+	echo $WORKERNAME 
+	echo $PORT
+	./serverNode $2 $WORKERNAME 5001 $PORT 5001 >& $FILE &
+	sleep 2
+done
