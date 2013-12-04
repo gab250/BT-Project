@@ -1,9 +1,14 @@
 package Server;
 
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
@@ -23,40 +28,31 @@ import Dispatcher.DispatcherInterface;
 public class ServerNode implements ServerNodeInterface {
 
 	private DispatcherInterface dispatcher_;
-	private String name_, dispatcherHostName_;
+	private String name_, dispatcherHostName_,ipAddress_;
 	private int id_, dispatcherRMIPort_, localRMIPort_, port_;
 	
 	public static void main(String[] args)
 	{
-		//System.setProperty("java.rmi.server.hostname", "54.213.89.227");
+		String publicIpAdress=null;
 		
-		InetAddress publicAdress;
-		
-	    Enumeration<NetworkInterface> nets;
-	    
-		try 
+		//Getting public IPv4 address
+		try
 		{
-			nets = NetworkInterface.getNetworkInterfaces();
+		     URL myIP = new URL("http://api.externalip.net/ip/");
+		     BufferedReader in = new BufferedReader(
+		                          new InputStreamReader(myIP.openStream()));
+		     publicIpAdress = in.readLine();
 					
-		    for (NetworkInterface netint : Collections.list(nets))
-		    {
-		        Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
-		        
-		        for (InetAddress inetAddress : Collections.list(inetAddresses)) 
-		        {
-		        	System.out.println(inetAddress);
-		        }
-		        
-		    }
-		} 
-		catch (SocketException e1) 
+	    }
+		catch(Exception e)
 		{
-			e1.printStackTrace();
-		}
-				
-		System.out.println("Starting node...");
+			e.printStackTrace();
+		}	
 		
-		ServerNode serverNode = new ServerNode(args[0],args[1],Integer.valueOf(args[2].trim()),Integer.valueOf(args[3].trim()), Integer.valueOf(args[4].trim()));
+		System.out.println("Starting node with IP address " + publicIpAdress);
+		System.setProperty("java.rmi.server.hostname", publicIpAdress);
+		
+		ServerNode serverNode = new ServerNode(args[0],args[1],Integer.valueOf(args[2].trim()),Integer.valueOf(args[3].trim()), Integer.valueOf(args[4].trim()), publicIpAdress);
 
 		try 
 		{
@@ -69,13 +65,14 @@ public class ServerNode implements ServerNodeInterface {
 		
 	}
 	
-	public ServerNode(String hostName, String name, int localRMIPort, int port, int dispatcherRMIPort)
+	public ServerNode(String hostName, String name, int localRMIPort, int port, int dispatcherRMIPort, String ipAddress)
 	{
 		name_ = name;
 		dispatcherHostName_ = hostName;
 		localRMIPort_ = localRMIPort;
 		dispatcherRMIPort_ = dispatcherRMIPort;
 		port_= port;
+		ipAddress_=ipAddress;
     }
 	
 	public void Report(Map<String,Map<String,Map<String,Float>>> result)
@@ -118,7 +115,7 @@ public class ServerNode implements ServerNodeInterface {
 		dispatcher_ = loadDispatcherStub(dispatcherHostName_);
 		
 		//Register current Node to dispatcher
-		id_ = dispatcher_.Register(InetAddress.getLocalHost().getHostName(), name_, localRMIPort_);
+		id_ = dispatcher_.Register(ipAddress_, name_, localRMIPort_);
 		
 		//Register failed
 		if(id_ <= 0)
