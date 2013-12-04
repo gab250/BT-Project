@@ -144,18 +144,32 @@ public class Dispatcher implements DispatcherInterface {
 			
 			//Split work
 			Vector<Vector<String>> workLoads = new Vector<Vector<String>>();
-		    int workLoadSize = workLoad.size()/aliveWorkers.size();
+			int numberOfWorker = aliveWorkers.size();
+		    int workLoadSize = workLoad.size()/numberOfWorker;
 		    
-		    for(int i=0; i<workLoad.size(); ++i)
+		    for(int i=0; i<numberOfWorker; ++i)
 		    {
 		    	workLoads.add(new Vector<String>());
-		    	
-		    	for(int j=0; j<workLoadSize; ++j)
+
+		    	if(i == (numberOfWorker-1))
 		    	{
-		    		workLoads.get(i).add(workLoad.remove(0));
+		    		do
+		    		{
+		    			workLoads.get(i).add(workLoad.remove(0));	
+		    			
+		    		}while(!(workLoad.isEmpty()));
+		    	}
+		    	else
+		    	{
+			       	for(int j=0; j<workLoadSize; ++j)
+			    	{
+			    		workLoads.get(i).add(workLoad.remove(0));
+			    	}
 		    	}
 		    }
-		    		    
+		    
+		    System.out.println("Number of workloads : " + Integer.toString(workLoads.size()));
+		    
 		    //Send workloads to Server Nodes
 		    try
 		    {

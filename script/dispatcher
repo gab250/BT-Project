@@ -1,1 +1,1 @@
-java -cp ../dist/Dispatcher.jar -Djava.security.policy=../policy Dispatcher.Dispatcher $1 $2
+java -cp ../dist/Dispatcher.jar -Djava.security.policy=../policy Dispatcher.Dispatcher $1 $2 >& ../log/dispatcherLog &

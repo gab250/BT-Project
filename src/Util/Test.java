@@ -12,90 +12,51 @@ public class Test
 {
 	public static void main(String[] args) 
 	{
-		String strUrl = "http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nyse&render=download";
+		Test test = new Test();
 		
-		Vector<String> symbols = new Vector<String>();
-		String line;
+		int n=12;
+		int k=7;
+			
+		int x=n;
+		int y=1;
+		int b=1;
 		
-		URL url;
-	    InputStream is = null;
-	    BufferedReader br;
-	    String currentSymbol;
+		System.out.println(" n : " + Integer.toString(n) + " k: " + Integer.toString(k));
+		System.out.println("x   |   y   |   b");
 		
-		try 
-        {
-            url = new URL(strUrl);
-			is = url.openStream();  // throws an IOException
-		    br = new BufferedReader(new InputStreamReader(is));
-		   	    
-		    while ((line = br.readLine()) != null) 
-		    {
-		    	currentSymbol = line.split(",")[0];
-		    	
-		    	
-		    	if(currentSymbol.contains(" "))
-		    	{
-		    		currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
-		    	}
-		    	
-		    	if(currentSymbol.contains("^"))
-		    	{
-		    		currentSymbol = currentSymbol.replace('^', ' ');
-		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
-		    	}
-		    	else if(currentSymbol.contains("/"))
-		    	{
-		    		currentSymbol = currentSymbol.replace('/', ' ');
-		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
-		    	}
-		    	else if(currentSymbol.contains("$"))
-		    	{
-		    		currentSymbol = currentSymbol.replace('$', ' ');
-		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
-		    	}
-		    	
-		    	if(!symbols.contains(currentSymbol) && !currentSymbol.equals("\"Symbol\""))
-		    	{
-		    		symbols.add(currentSymbol);
-		    	}
-		    	
-	        }
-	  
-        } 
-		catch (MalformedURLException e) 
+		while(x!=k)
 		{
-			e.printStackTrace();
-		} 
-		catch (IOException e) 
-		{
-			e.printStackTrace();
+			System.out.println(Integer.toString(x) + "   |   " + Integer.toString(y) + "   |   " + Integer.toString(b));
+			b=(b*x/y);
+			x=x-1;
+			y=y+1;
 		}
 		
-		//Test for ^,$,/
-		for(int i=0; i<symbols.size() ; ++i)
+		System.out.println(Integer.toString(x) + "   |   " + Integer.toString(y) + "   |   " + Integer.toString(b));
+		
+		//System.out.println(Integer.toString(test.bin(x+y-1,y-1)));
+		System.out.println("bin(n,k) : " + Integer.toString(test.bin(n, k)));
+		System.out.println("b = " + Integer.toString(b));
+
+		
+		/*
+		System.out.println("Base : " + Integer.toString(test.bin(n,k)));
+		//int check = (((n-k+1)*(k+1))/((k-1)*(n-k))) * test.bin((n-1), (n-k));
+		int check = ((k-1)/(n-k+1)) * test.bin((n-1), (n-k-1));
+		int bb = ((k-1)/(n-k+1))
+		System.out.println("Check : " + Integer.toString(check));
+		 */
+	}
+	
+	public int bin(int n, int k)
+	{
+		if(k==n)
 		{
-			if(symbols.get(i).contains("^"))
-			{
-				System.err.println("Symbol Containing ^ : " + symbols.get(i));
-			}
-			
-			if(symbols.get(i).contains("/"))
-			{
-				System.err.println("Symbol Containing / : " + symbols.get(i));
-			}
-			
-			if(symbols.get(i).contains("$"))
-			{
-				System.err.println("Symbol Containing $ : " + symbols.get(i));
-			}
-			
-			if(symbols.get(i).contains(" "))
-			{
-				System.err.println("Symbol Containing ' ' : " + symbols.get(i));
-			}
+			return 1;
 		}
-		
-		System.out.println("Done");
-		
+		else
+		{
+			return bin(n,k+1)*(k+1)/(n-k);
+		}
 	}
 }

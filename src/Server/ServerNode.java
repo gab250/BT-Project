@@ -2,6 +2,8 @@ package Server;
 
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
@@ -10,6 +12,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
@@ -24,8 +28,32 @@ public class ServerNode implements ServerNodeInterface {
 	
 	public static void main(String[] args)
 	{
-		System.setProperty("java.rmi.server.hostname", "54.213.89.227");
+		//System.setProperty("java.rmi.server.hostname", "54.213.89.227");
 		
+		InetAddress publicAdress;
+		
+	    Enumeration<NetworkInterface> nets;
+	    
+		try 
+		{
+			nets = NetworkInterface.getNetworkInterfaces();
+					
+		    for (NetworkInterface netint : Collections.list(nets))
+		    {
+		        Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+		        
+		        for (InetAddress inetAddress : Collections.list(inetAddresses)) 
+		        {
+		        	System.out.println(inetAddress);
+		        }
+		        
+		    }
+		} 
+		catch (SocketException e1) 
+		{
+			e1.printStackTrace();
+		}
+				
 		System.out.println("Starting node...");
 		
 		ServerNode serverNode = new ServerNode(args[0],args[1],Integer.valueOf(args[2].trim()),Integer.valueOf(args[3].trim()), Integer.valueOf(args[4].trim()));

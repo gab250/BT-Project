@@ -2,8 +2,7 @@
 rm -f ../log/*
 
 #Starting dispatcher
-./dispatcher 5001 3000 >& ../log/dispatcherLog &
+./dispatcher 5001 3000 
 
 #Starting nodes
-./serverNodeInit $1
- $2
+./serverNodeInit $1 $2
