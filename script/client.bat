@@ -1,1 +1,1 @@
-java -cp ..\dist\Client.jar -Djava.security.policy=..\policy Client.Client ec2-54-213-89-227.us-west-2.compute.amazonaws.com 5001 -n
+java -cp ..\dist\Client.jar -Djava.security.policy=..\policy Client.Client ec2-54-201-144-219.us-west-2.compute.amazonaws.com 5001 %1

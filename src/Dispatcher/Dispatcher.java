@@ -1,6 +1,9 @@
 package Dispatcher;
 
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -28,7 +31,23 @@ public class Dispatcher implements DispatcherInterface {
 		
 	public static void main(String[] args) throws Exception
 	{
-		System.setProperty("java.rmi.server.hostname", "54.213.89.227");
+		String publicIpAdress=null;
+		
+		//Getting public IPv4 address
+		try
+		{
+		     URL myIP = new URL("http://api.externalip.net/ip/");
+		     BufferedReader in = new BufferedReader(
+		                          new InputStreamReader(myIP.openStream()));
+		     publicIpAdress = in.readLine();
+	    }
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		System.setProperty("java.rmi.server.hostname", publicIpAdress);
+		
 		Dispatcher dispatcher = new Dispatcher(Integer.valueOf(args[0].trim()),Integer.valueOf(args[1].trim()));
 		dispatcher.run();
 	}	
