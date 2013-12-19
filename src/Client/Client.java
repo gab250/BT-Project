@@ -27,6 +27,7 @@ public class Client
 			System.out.println("Fetching Symbols...");
 			
 			Vector<String> workLoad = YahooAPI.getNYSESymbols();
+			workLoad.addAll(YahooAPI.getNasdaqSymbols());
 			
 			System.out.println("Symbols retreived");
 			

@@ -93,6 +93,7 @@ public class YahooAPI
 		URL url;
 	    InputStream is = null;
 	    BufferedReader br;
+	    String currentSymbol=null;
 		
 		try 
         {
@@ -102,7 +103,34 @@ public class YahooAPI
 		   
 		    while ((line = br.readLine()) != null) 
 		    {
-		    	symbols.add(line.split(",")[0]);
+			    currentSymbol=line.split(",")[0];
+		    	
+		     	if(currentSymbol.contains(" "))
+		    	{
+		    		currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	
+		    	if(currentSymbol.contains("^"))
+		    	{
+		    		currentSymbol = currentSymbol.replace('^', ' ');
+		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	else if(currentSymbol.contains("/"))
+		    	{
+		    		currentSymbol = currentSymbol.replace('/', ' ');
+		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	else if(currentSymbol.contains("$"))
+		    	{
+		    		currentSymbol = currentSymbol.replace('$', ' ');
+		    	    currentSymbol = (currentSymbol.split(" ")[0]).concat("\"");
+		    	}
+		    	
+		    	if(!symbols.contains(currentSymbol) && !currentSymbol.equals("\"Symbol\""))
+		    	{
+		    		symbols.add(currentSymbol);
+		    	}
+		    	
 	        }
 	  
         } 
