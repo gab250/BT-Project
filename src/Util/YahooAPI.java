@@ -27,7 +27,9 @@ public class YahooAPI
 				"&f=" +  Integer.valueOf(in_strEndDate.substring(0, 4)) + 
 				"&g=d&ignore=.csv";
 		
-		String strUrl = "http://ichart.yahoo.com/table.csv?";
+		System.out.println("URL : " + strTimeParam);
+		
+		String strUrl = "http://ichart.finance.yahoo.com/table.csv?";
 		strUrl+=strTimeParam;
 		
 		URL url;

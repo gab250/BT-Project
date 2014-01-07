@@ -15,11 +15,14 @@ public class WorkUnit implements Runnable
 {
 	private ServerNode parent_;
 	private Vector<String> workLoad_;
+	private String startTime_,endTime_;
 
-	public WorkUnit(ServerNode parent, Vector<String> workLoad)
+	public WorkUnit(ServerNode parent, Vector<String> workLoad, String startTime, String endTime)
 	{
 		parent_ = parent;
 		workLoad_ = workLoad;
+		startTime_ = startTime;
+		endTime_ = endTime;
 	}
 			
 	@Override
@@ -31,8 +34,6 @@ public class WorkUnit implements Runnable
 		
 		//Results
 		Map<String,Map<String,Map<String,Float>>> results = new HashMap<String,Map<String,Map<String,Float>>>();
-		String start = "2013-10-01";
-		String end = "2013-10-31";
 		
 		Vector<String> problematicSymbol = new Vector<String>();
 		
@@ -40,7 +41,7 @@ public class WorkUnit implements Runnable
 		{
 			try
 			{
-				results.put(workLoad_.get(i), YahooAPI.getHistoricalData(workLoad_.get(i), start , end));
+				results.put(workLoad_.get(i), YahooAPI.getHistoricalData(workLoad_.get(i), startTime_ , endTime_));
 				System.out.println("Treated : " + workLoad_.get(i) + " progress : " + Integer.toString(i+1) + "/" + Integer.toString(workLoad_.size()));
 			}
 			catch(IOException e)

@@ -129,9 +129,9 @@ public class ServerNode implements ServerNodeInterface {
 	}
 		
 	@Override
-	public void Process(Vector<String> workLoad) throws RemoteException 
+	public void Process(Vector<String> workLoad, String startTime, String endTime) throws RemoteException 
 	{
-		WorkUnit workUnit = new WorkUnit(this,workLoad);
+		WorkUnit workUnit = new WorkUnit(this,workLoad,startTime,endTime);
 		Thread workingThread = new Thread(workUnit);
 		workingThread.start();
     }

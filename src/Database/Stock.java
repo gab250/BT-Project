@@ -2,11 +2,12 @@ package Database;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.*;
 
-@Entity(name = "STOCK")
+@Entity(name="STOCK")
 public class Stock implements Serializable 
 {
 	public enum Exchange {NYSE,NASDAQ};
@@ -17,9 +18,20 @@ public class Stock implements Serializable
 		exchange_ = exchange;
 	}
 	
-	public void addChartInterval(ChartInterval interval)
+	public Stock()
 	{
-		chart_.add(interval);
+		symbol_ =null;
+		exchange_ = null;
+	}
+	
+	public String getSymbol()
+	{
+		return symbol_;
+	}
+	
+	public Exchange getExchange()
+	{
+		return exchange_;
 	}
 	
 	@Id
@@ -28,8 +40,7 @@ public class Stock implements Serializable
 	
 	@Id
 	@Column(name="EXCHANGE",nullable=false)
+	@Enumerated(EnumType.STRING)
 	private Exchange exchange_;
-	
-	@OneToMany
-	private List<ChartInterval> chart_;
+
 }

@@ -1,1 +1,1 @@
-rsync -rav --exclude '.git' ../BT-Project galap@L4714-13.info.polymtl.ca:~/
+rsync -rav --exclude '.git' ../BT-Project galap@L4714-22.info.polymtl.ca:~/

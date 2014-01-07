@@ -1,6 +1,5 @@
 package Dispatcher;
 
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -10,6 +9,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -19,6 +19,15 @@ import java.util.Vector;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
+import Database.ChartInterval;
+import Database.ChartInterval.Currency;
+import Database.ChartInterval.TimeFrame;
+import Database.Stock;
+import Database.Stock.Exchange;
 import Server.ServerNodeInterface;
 
 public class Dispatcher implements DispatcherInterface {
@@ -130,7 +139,7 @@ public class Dispatcher implements DispatcherInterface {
 	}
 
 	@Override
-	public int Process(Vector<String> workLoad) throws RemoteException 
+	public Map<String, Map<String,Map<String,Float>>> Process(Vector<String> workLoad, String startTime, String endTime, Stock.Exchange exchange, Job job) throws RemoteException 
 	{
 		//Get time
 		Calendar cal = Calendar.getInstance();
@@ -194,7 +203,7 @@ public class Dispatcher implements DispatcherInterface {
 		    {
   				for(int i=0; i<aliveWorkers.size() ; ++i)
 				{
-						Workers_.get(aliveWorkers.get(i)).Process(workLoads.get(i));
+						Workers_.get(aliveWorkers.get(i)).Process(workLoads.get(i),startTime,endTime);
 						workDispatchingJournal.put(aliveWorkers.get(i),workLoads.get(i));
 				}
 		    }
@@ -253,11 +262,21 @@ public class Dispatcher implements DispatcherInterface {
 		
 		if(combinedResults != null)
 		{
-			return combinedResults.size();
+			if(job == Job.FILL)
+			{
+				//Update Database 
+				//FillDatabase(combinedResults, TimeFrame.DAY, Currency.USD, exchange);
+			}
+			else if(job == Job.UPDATE)
+			{
+				//Update database
+			}
+			
+			return combinedResults;
 		}
 		else
 		{
-			return 0;
+			return null;
 		}
 	}
 	
@@ -370,5 +389,52 @@ public class Dispatcher implements DispatcherInterface {
 		
 		return result;
 	}
+	
+	private void FillDatabase(Map<String, Map<String,Map<String,Float>>> data, TimeFrame timeFrame, Currency currency, Exchange exchange)
+	{
+		//Creating transaction
+		EntityManagerFactory emf = Persistence.createEntityManagerFactory("$objectdb/db/stocks.odb");
+	    EntityManager em = emf.createEntityManager();
+	    
+	    //Starting transaction
+	    em.getTransaction().begin();
+		
+		//Fill stock
+		for (Entry<String, Map<String, Map<String, Float>>> stock : data.entrySet()) 
+		{
+			//Create Stock 
+			Stock newStock = new Stock(stock.getKey(),exchange);
+			
+			System.out.println("Created new stock : " + stock.getKey());
+			
+			//Fill chart
+			for (Map.Entry<String, Map<String,Float>> stockData : stock.getValue().entrySet()) 
+			{
+				ChartInterval chart = new ChartInterval(timeFrame,Timestamp.valueOf(stockData.getKey() + " 00:00:00.0"), currency);
+				chart.setOpen(stockData.getValue().get("Open"));
+				chart.setClose(stockData.getValue().get("Close"));
+				chart.setHigh(stockData.getValue().get("High"));
+				chart.setLow(stockData.getValue().get("Low"));
+				chart.setVolume(stockData.getValue().get("Volume"));
+				chart.setAdjclose(stockData.getValue().get("Adj Close"));
+				chart.setSymbol(newStock);
+				
+				//Persist chart objects
+				em.persist(chart);
+				
+				//newStock.addChartInterval(chart);
+			}
+			
+			//Persist stock object
+			em.persist(newStock);
+			
+		}
+				
+		//End transaction
+		em.getTransaction().commit();
+		
+	}
 
+
+	
 }
