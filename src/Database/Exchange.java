@@ -15,7 +15,7 @@ import javax.persistence.SequenceGenerator;
 @SequenceGenerator(name="exchange_id_seq", sequenceName="exchange_id_seq", allocationSize=1)
 public class Exchange implements Serializable
 {
-	public Exchange(String abbreviation,
+   public Exchange(String abbreviation,
 					String name,
 					String city,
 					String country,

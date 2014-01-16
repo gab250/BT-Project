@@ -6,6 +6,7 @@
     <class>Database.DataVendor</class>
     <class>Database.Exchange</class>
     <class>Database.Symbol</class>
+    <class>Database.DailyPrice</class>
     <properties>
      
       <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />

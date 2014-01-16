@@ -5,6 +5,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -17,11 +19,8 @@ import javax.persistence.TypedQuery;
 
 import Util.YahooAPI;
 
-import Database.ChartInterval;
-import Database.Stock;
-import Database.ChartInterval.Currency;
-import Database.ChartInterval.TimeFrame;
-import Database.Stock.Exchange;
+import Database.DailyPrice;
+import Database.Symbol;
 import Dispatcher.DispatcherInterface;
 import Dispatcher.DispatcherInterface.Job;
 
@@ -33,19 +32,18 @@ public class Client
 	{
 		Client client = new Client();
 		client.loadDispatcherStub(args[0],Integer.valueOf(args[1]));
-		  
-	
+		  	
 		if(args[2].equals("-u"))
 		{
-			Exchange exchange=null;
+			Dispatcher.DispatcherInterface.Exchange exchange=null;
 		
 			if(args[3].equals("NYSE") || args[3].equals("nyse"))
 			{
-				exchange=Exchange.NYSE;
+				exchange=Dispatcher.DispatcherInterface.Exchange.NYSE;
 			}
 			else if(args[3].equals("NASDAQ") || args[3].equals("nasdaq"))
 			{
-				exchange=Exchange.NASDAQ;
+				exchange=Dispatcher.DispatcherInterface.Exchange.NASDAQ;
 			}
 			else
 			{
@@ -53,50 +51,56 @@ public class Client
 				System.exit(-1);
 			}
 			
-			//Creating transaction
-			EntityManagerFactory emf = Persistence.createEntityManagerFactory("$objectdb/db/stocks.odb");
-		    EntityManager em = emf.createEntityManager();
-		
-		    //Starting transaction
+			//Starting transaction
+			EntityManagerFactory factory = Persistence.createEntityManagerFactory("equities_master");
+		    EntityManager em = factory.createEntityManager();
+		    
 		    em.getTransaction().begin();
-		    
-		    //Fetch symbols
-		    TypedQuery<String> query1 = em.createQuery("SELECT s.symbol_ FROM STOCK s WHERE s.exchange_=:exchange", String.class);
-		    query1.setParameter("exchange", exchange);
-		    List<String> symbols = query1.getResultList();
-		    
-		    //Reformat strings
-		    for(int i=0; i<symbols.size(); ++i)
-		    {
-		    	symbols.set(i, "\"" + symbols.get(i) + "\"");
-		    }
-		    
-		    Vector<String> symbol = new Vector<String>(symbols);
-		        
-		    //Process
-		    Map<String,Map<String,Map<String,Float>>> result = client.Process(symbol, args[4], args[5], exchange, Job.UPDATE);
-		    
-		    //Fetch stocks
-		    TypedQuery<Stock> query2 = em.createQuery("SELECT s FROM STOCK s WHERE s.exchange_=:exchange", Stock.class);
-		    query2.setParameter("exchange", exchange);
-		    List<Stock> stocks = query2.getResultList();
-		    
-		    client.UpdateDatabase(result, new Vector<Stock>(stocks), TimeFrame.DAY, Currency.USD);
 			
+			//Retreive exchange entry in DB
+		    TypedQuery<Database.Exchange> exchangeQuery = em.createQuery("SELECT e FROM exchange e WHERE e.abbrev_=:exchange", Database.Exchange.class);
+		    exchangeQuery.setParameter("exchange", exchange.toString());
+		    Database.Exchange exchangeEntry = exchangeQuery.getSingleResult();
+
+		    //Retreive stocks
+		    TypedQuery<String> symbolQuery = em.createQuery("SELECT s.ticker_ FROM symbol s WHERE s.exchange_=:exchange", String.class);
+		    symbolQuery.setParameter("exchange", exchangeEntry);
+		    List<String> symbolList =  symbolQuery.getResultList();
+		    	    
+		    //Reformat strings
+		    for(int i=0; i<symbolList.size(); ++i)
+		    {
+               	symbolList.set(i, "\"" + symbolList.get(i) + "\"");
+		    }
+
+		    //Process
+		    int result = client.Process(new Vector<String>(symbolList), args[4], args[5], exchange, Job.UPDATE_HISTORIC_DATA);
+		    
+			if(result > 0)
+			{
+				System.out.println("Database successfully updated");
+			}
+			else
+			{
+				System.out.println("Dispatcher couldn't do job");
+			}
+		    
+     	    em.getTransaction().commit();
+		    em.close();
 		}
 		else if(args[2].equals("-f"))
 		{
-			Exchange exchange=null;
+			Dispatcher.DispatcherInterface.Exchange exchange=null;
 			Vector<String> workLoad=null;
 			
 			if(args[3].equals("NYSE") || args[3].equals("nyse"))
 			{
-				exchange=Exchange.NYSE;
+				exchange=Dispatcher.DispatcherInterface.Exchange.NYSE;
 				workLoad=YahooAPI.getNYSESymbols();
 			}
 			else if(args[3].equals("NASDAQ") || args[3].equals("nasdaq"))
 			{
-				exchange=Exchange.NASDAQ;
+				exchange=Dispatcher.DispatcherInterface.Exchange.NASDAQ;
 				workLoad=YahooAPI.getNasdaqSymbols();
 			}
 			else
@@ -105,21 +109,18 @@ public class Client
 				System.exit(-1);
 			}
 			
-			Map<String, Map<String,Map<String,Float>>> result = client.Process(workLoad,args[4],args[5],exchange,Job.FILL);
-			
-			client.FillDatabase(result,TimeFrame.DAY,Currency.USD,exchange);
-			
-			/*
+			int result = client.Process(workLoad,args[4],args[5],exchange,Job.FILL_DATABASE);
+
 			if(result > 0)
 			{
-				System.out.println("Results retreived, number of stocks : " + Integer.toString(result));
+				System.out.println("Database successfully filled");
 			}
 			else
 			{
 				System.out.println("Dispatcher couldn't do job");
 			}
-			*/
-		
+
+		    
 		}
 		else if(args[2].equals("-n"))
 		{
@@ -130,9 +131,9 @@ public class Client
 	
 	}
 	
-	public Map<String, Map<String,Map<String,Float>>> Process(Vector<String> workLoad, String start, String end, Exchange exchange, Job job)
+	public int Process(Vector<String> workLoad, String start, String end, Dispatcher.DispatcherInterface.Exchange exchange, Job job)
 	{
-		Map<String, Map<String,Map<String,Float>>> result=null;
+		int result=0;
 		String formatedResult="";
 		
 		try 
@@ -186,96 +187,4 @@ public class Client
 		dispatcher_= stub;
 	}
 	
-	private void FillDatabase(Map<String, Map<String,Map<String,Float>>> data, TimeFrame timeFrame, Currency currency, Exchange exchange)
-	{
-		//Creating transaction
-		EntityManagerFactory emf = Persistence.createEntityManagerFactory("$objectdb/db/stocks.odb");
-	    EntityManager em = emf.createEntityManager();
-	
-	    //Starting transaction
-	    em.getTransaction().begin();
-		
-		//Fill stock
-		for (Entry<String, Map<String, Map<String, Float>>> stock : data.entrySet()) 
-		{
-			//Create Stock 
-			Stock newStock = new Stock(stock.getKey().substring(1, stock.getKey().length()-1),exchange);
-			
-			//Fill chart
-			for (Map.Entry<String, Map<String,Float>> stockData : stock.getValue().entrySet()) 
-			{
-     			ChartInterval chart = new ChartInterval(timeFrame,Timestamp.valueOf(stockData.getKey() + " 00:00:00.0"), currency);
-				chart.setOpen(stockData.getValue().get("Open"));
-				chart.setClose(stockData.getValue().get("Close"));
-				chart.setHigh(stockData.getValue().get("High"));
-				chart.setLow(stockData.getValue().get("Low"));
-				chart.setVolume(stockData.getValue().get("Volume"));
-				chart.setAdjclose(stockData.getValue().get("Adj Close"));
-				chart.setSymbol(newStock);
-				
-				//Create Key
-				chart.setKey();
-				
-				//Persist chart objects
-				em.persist(chart);
-				
-				//newStock.addChartInterval(chart);
-			}
-			
-			//Persist stock object
-			em.persist(newStock);
-			
-		}
-				
-		//End transaction
-		em.getTransaction().commit();
-		
-	}
-
-    private void UpdateDatabase(Map<String, Map<String,Map<String,Float>>> data, Vector<Stock> stocks, TimeFrame timeFrame, Currency currency)
-	{
-
-    	//Creating transaction
-		EntityManagerFactory emf = Persistence.createEntityManagerFactory("$objectdb/db/stocks.odb");
-	    EntityManager em = emf.createEntityManager();
-	    
-	    //Start transaction
-	    em.getTransaction().begin();
-	    
-	    //For every stock
-  		for (int i=0; i<stocks.size(); ++i) 
-  		{   
-  			
-  			if(data.get("\""  + stocks.get(i).getSymbol() + "\"")!=null)
-		    {
-	  			//Add new chart Intervals
-	  			for (Map.Entry<String, Map<String,Float>> stockData : data.get("\""  + stocks.get(i).getSymbol() + "\"").entrySet()) 
-	  			{
-	  				
-		       			ChartInterval chart = new ChartInterval(timeFrame,Timestamp.valueOf(stockData.getKey() + " 00:00:00.0"), currency);
-		  				chart.setOpen(stockData.getValue().get("Open"));
-		  				chart.setClose(stockData.getValue().get("Close"));
-		  				chart.setHigh(stockData.getValue().get("High"));
-		  				chart.setLow(stockData.getValue().get("Low"));
-		  				chart.setVolume(stockData.getValue().get("Volume"));
-		  				chart.setAdjclose(stockData.getValue().get("Adj Close"));
-		  				chart.setSymbol(stocks.get(i));
-		  				
-		  				//Create Key
-		  				chart.setKey();
-		  				
-		  				//Persist chart objects
-		  				em.persist(chart);	  			
-	  			}
-			}
-			else
-			{
-				System.err.println("Couldn't find : " + "\""  + stocks.get(i).getSymbol() + "\"");
-			}
- 			
-  		}
-	    
-	    //End transaction
-	    em.getTransaction().commit();
-	}
 }

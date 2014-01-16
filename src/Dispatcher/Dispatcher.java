@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
@@ -22,12 +23,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
 
-import Database.ChartInterval;
-import Database.ChartInterval.Currency;
-import Database.ChartInterval.TimeFrame;
-import Database.Stock;
-import Database.Stock.Exchange;
+import Database.DailyPrice;
+import Database.DataVendor;
+import Database.Symbol;
 import Server.ServerNodeInterface;
 
 public class Dispatcher implements DispatcherInterface {
@@ -139,7 +139,7 @@ public class Dispatcher implements DispatcherInterface {
 	}
 
 	@Override
-	public Map<String, Map<String,Map<String,Float>>> Process(Vector<String> workLoad, String startTime, String endTime, Stock.Exchange exchange, Job job) throws RemoteException 
+	public int Process(Vector<String> workLoad, String startTime, String endTime, DispatcherInterface.Exchange exchange, Job job) throws RemoteException 
 	{
 		//Get time
 		Calendar cal = Calendar.getInstance();
@@ -262,21 +262,65 @@ public class Dispatcher implements DispatcherInterface {
 		
 		if(combinedResults != null)
 		{
-			if(job == Job.FILL)
+			if(job == Job.FILL_DATABASE)
 			{
-				//Update Database 
-				//FillDatabase(combinedResults, TimeFrame.DAY, Currency.USD, exchange);
+				//Starting transaction
+				EntityManagerFactory factory = Persistence.createEntityManagerFactory("equities_master");
+			    EntityManager em = factory.createEntityManager();
+			    
+			    em.getTransaction().begin();
+				
+				//Retreive exchange entry in DB
+			    TypedQuery<Database.Exchange> exchangeQuery = em.createQuery("SELECT e FROM exchange e WHERE e.abbrev_=:exchange", Database.Exchange.class);
+			    exchangeQuery.setParameter("exchange", exchange.toString());
+			    Database.Exchange exchangeEntry = exchangeQuery.getSingleResult();
+			    
+			    //Retreive vendor entry in DB
+			    TypedQuery<Database.DataVendor> vendorQuery = em.createQuery("SELECT v FROM data_vendor v WHERE v.name_=\"Yahoo\"", Database.DataVendor.class);
+			    Database.DataVendor dataVendorEntry = vendorQuery.getSingleResult();
+								
+				//Fill database  
+				FillDatabase(combinedResults,exchangeEntry,dataVendorEntry);
+				
+				em.getTransaction().commit();
+				em.close();
 			}
-			else if(job == Job.UPDATE)
+			else if(job == Job.UPDATE_HISTORIC_DATA)
 			{
 				//Update database
+				
+				//Starting transaction
+				EntityManagerFactory factory = Persistence.createEntityManagerFactory("equities_master");
+			    EntityManager em = factory.createEntityManager();
+			    
+			    em.getTransaction().begin();
+				
+				//Retreive exchange entry in DB
+			    TypedQuery<Database.Exchange> exchangeQuery = em.createQuery("SELECT e FROM exchange e WHERE e.abbrev_=:exchange", Database.Exchange.class);
+			    exchangeQuery.setParameter("exchange", exchange.toString());
+			    Database.Exchange exchangeEntry = exchangeQuery.getSingleResult();
+
+			    //Retreive stocks
+			    TypedQuery<Symbol> symbolQuery = em.createQuery("SELECT s FROM symbol s WHERE s.exchange_=:exchange", Symbol.class);
+			    symbolQuery.setParameter("exchange", exchangeEntry);
+			    List<Symbol> symbolList =  symbolQuery.getResultList();
+			    
+			    //Retreive vendor
+			    TypedQuery<DataVendor> vendorQuery = em.createQuery("SELECT v FROM data_vendor v WHERE v.name_=\"Yahoo\"", DataVendor.class);
+			    DataVendor vendor =  vendorQuery.getSingleResult();
+			    
+				//Update database  
+				UpdateDatabase(combinedResults,symbolList,vendor);
+				
+				em.getTransaction().commit();
+				em.close();
 			}
-			
-			return combinedResults;
+		
+			return combinedResults.size();
 		}
 		else
 		{
-			return null;
+			return 0;
 		}
 	}
 	
@@ -390,51 +434,113 @@ public class Dispatcher implements DispatcherInterface {
 		return result;
 	}
 	
-	private void FillDatabase(Map<String, Map<String,Map<String,Float>>> data, TimeFrame timeFrame, Currency currency, Exchange exchange)
+	private void FillDatabase(Map<String, Map<String,Map<String,Float>>> data,Database.Exchange exchange, Database.DataVendor vendor)
 	{
+		System.out.println("Starting to fill database");
+		
 		//Creating transaction
-		EntityManagerFactory emf = Persistence.createEntityManagerFactory("$objectdb/db/stocks.odb");
+		EntityManagerFactory emf = Persistence.createEntityManagerFactory("equities_master");
 	    EntityManager em = emf.createEntityManager();
 	    
 	    //Starting transaction
 	    em.getTransaction().begin();
 		
-		//Fill stock
+        //Fill stock
 		for (Entry<String, Map<String, Map<String, Float>>> stock : data.entrySet()) 
 		{
 			//Create Stock 
-			Stock newStock = new Stock(stock.getKey(),exchange);
+			Symbol newSymbol = new Symbol(stock.getKey().substring(1, stock.getKey().length()-1),"Common stock",new Timestamp(Calendar.getInstance().getTime().getTime()),new Timestamp(Calendar.getInstance().getTime().getTime()));
+			newSymbol.setExchange(exchange);
 			
-			System.out.println("Created new stock : " + stock.getKey());
+			em.persist(newSymbol);
 			
-			//Fill chart
+			//Fill daily_price
 			for (Map.Entry<String, Map<String,Float>> stockData : stock.getValue().entrySet()) 
 			{
-				ChartInterval chart = new ChartInterval(timeFrame,Timestamp.valueOf(stockData.getKey() + " 00:00:00.0"), currency);
-				chart.setOpen(stockData.getValue().get("Open"));
-				chart.setClose(stockData.getValue().get("Close"));
-				chart.setHigh(stockData.getValue().get("High"));
-				chart.setLow(stockData.getValue().get("Low"));
-				chart.setVolume(stockData.getValue().get("Volume"));
-				chart.setAdjclose(stockData.getValue().get("Adj Close"));
-				chart.setSymbol(newStock);
-				
-				//Persist chart objects
-				em.persist(chart);
-				
-				//newStock.addChartInterval(chart);
+     			DailyPrice dailyPrice = new DailyPrice(Timestamp.valueOf(stockData.getKey() + " 00:00:00.0"),new Timestamp(Calendar.getInstance().getTime().getTime()),new Timestamp(Calendar.getInstance().getTime().getTime()));
+     			dailyPrice.setOpen(stockData.getValue().get("Open"));
+     			dailyPrice.setClose(stockData.getValue().get("Close"));
+     			dailyPrice.setHigh(stockData.getValue().get("High"));
+     			dailyPrice.setLow(stockData.getValue().get("Low"));
+     			dailyPrice.setVolume(stockData.getValue().get("Volume").longValue());
+     			dailyPrice.setAdjClose(stockData.getValue().get("Adj Close"));
+	     		
+     			dailyPrice.setSymbol(newSymbol);
+     			dailyPrice.setVendor(vendor);
+     			
+				//Persist daily_price
+				em.persist(dailyPrice);
 			}
-			
-			//Persist stock object
-			em.persist(newStock);
-			
+		
 		}
 				
 		//End transaction
 		em.getTransaction().commit();
+		em.close();
+		
+		System.out.println("Database filled");
 		
 	}
+	
+	private void UpdateDatabase(Map<String, Map<String,Map<String,Float>>> data, List<Symbol> stocks, DataVendor vendor)
+	{
+     	//Creating transaction
+		EntityManagerFactory emf = Persistence.createEntityManagerFactory("equities_master");
+	    EntityManager em = emf.createEntityManager();
+	    
+	    //Start transaction
+	    em.getTransaction().begin();
+	    
+	    //For every stock
+  		for (int i=0; i<stocks.size(); ++i) 
+  		{   
+  			if(data.get("\""  + stocks.get(i).getTicker() + "\"")!=null)
+		    {
+	  			//Add new chart Intervals
+	  			for (Map.Entry<String, Map<String,Float>> stockData : data.get("\""  + stocks.get(i).getTicker() + "\"").entrySet()) 
+	  			{
+	  				DailyPrice dailyPrice = new DailyPrice(Timestamp.valueOf(stockData.getKey() + " 00:00:00.0"),new Timestamp(Calendar.getInstance().getTime().getTime()),new Timestamp(Calendar.getInstance().getTime().getTime()));
+	     			dailyPrice.setOpen(stockData.getValue().get("Open"));
+	     			dailyPrice.setClose(stockData.getValue().get("Close"));
+	     			dailyPrice.setHigh(stockData.getValue().get("High"));
+	     			dailyPrice.setLow(stockData.getValue().get("Low"));
+	     			dailyPrice.setVolume(stockData.getValue().get("Volume").longValue());
+	     			dailyPrice.setAdjClose(stockData.getValue().get("Adj Close"));
+		     		
+	     			dailyPrice.setSymbol(stocks.get(i));
+	     			dailyPrice.setVendor(vendor);
+	     			
+					//Persist daily_price
+					em.persist(dailyPrice);
+	  			}
+			}
+			else
+			{
+				System.err.println("Couldn't find : " + "\""  + stocks.get(i).getTicker() + "\"");
+			}
+ 			
+  		}
+	    
+	    //End transaction
+	    em.getTransaction().commit();
+	    em.close();
+	}
+	
+	private void UpdateDatabase(Map<String, Map<String,Map<String,Float>>> data)
+	{
+     	//Creating transaction
+		EntityManagerFactory emf = Persistence.createEntityManagerFactory("equities_master");
+	    EntityManager em = emf.createEntityManager();
 
+	        
+	    
+	    //Start transaction
+	    em.getTransaction().begin();
+	    
+	    //End transaction
+	    em.getTransaction().commit();
+	    em.close();
+	}
 
 	
 }

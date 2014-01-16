@@ -1,1 +1,1 @@
-java -cp ../dist/Client.jar -Djava.security.policy=../policy Client.Client $1 $2 
+java -cp ../dist/Client.jar -Djava.security.policy=../policy Client.Client $1 $2 $3 $4 $5 $6
