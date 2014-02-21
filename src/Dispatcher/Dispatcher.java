@@ -278,12 +278,15 @@ public class Dispatcher implements DispatcherInterface {
 			    //Retreive vendor entry in DB
 			    TypedQuery<Database.DataVendor> vendorQuery = em.createQuery("SELECT v FROM data_vendor v WHERE v.name_=\"Yahoo\"", Database.DataVendor.class);
 			    Database.DataVendor dataVendorEntry = vendorQuery.getSingleResult();
-								
+				
+			    //Close transaction
+			    em.getTransaction().commit();
+				em.close();
+			    
 				//Fill database  
 				FillDatabase(combinedResults,exchangeEntry,dataVendorEntry);
 				
-				em.getTransaction().commit();
-				em.close();
+				
 			}
 			else if(job == Job.UPDATE_HISTORIC_DATA)
 			{
@@ -309,11 +312,37 @@ public class Dispatcher implements DispatcherInterface {
 			    TypedQuery<DataVendor> vendorQuery = em.createQuery("SELECT v FROM data_vendor v WHERE v.name_=\"Yahoo\"", DataVendor.class);
 			    DataVendor vendor =  vendorQuery.getSingleResult();
 			    
+			    //Close transaction
+			    em.getTransaction().commit();
+				em.close();
+			    
 				//Update database  
 				UpdateDatabase(combinedResults,symbolList,vendor);
 				
-				em.getTransaction().commit();
+			}
+			else if(job == Job.UPDATE_NEW_DATA)
+			{
+				//Starting transaction
+				EntityManagerFactory factory = Persistence.createEntityManagerFactory("equities_master");
+			    EntityManager em = factory.createEntityManager();
+			    
+			    em.getTransaction().begin();
+			    
+			    //Retreive stocks
+			    TypedQuery<Symbol> symbolQuery = em.createQuery("SELECT s FROM symbol s", Symbol.class);
+			    List<Symbol> symbolList =  symbolQuery.getResultList();		
+			    
+			    //Retreive vendor
+			    TypedQuery<DataVendor> vendorQuery = em.createQuery("SELECT v FROM data_vendor v WHERE v.name_=\"Yahoo\"", DataVendor.class);
+			    DataVendor vendor =  vendorQuery.getSingleResult();
+			    
+			    //Close transaction
+			    em.getTransaction().commit();
 				em.close();
+							 
+				//Update database  
+				UpdateDatabase(combinedResults,symbolList,vendor);
+			    
 			}
 		
 			return combinedResults.size();
@@ -525,22 +554,5 @@ public class Dispatcher implements DispatcherInterface {
 	    em.getTransaction().commit();
 	    em.close();
 	}
-	
-	private void UpdateDatabase(Map<String, Map<String,Map<String,Float>>> data)
-	{
-     	//Creating transaction
-		EntityManagerFactory emf = Persistence.createEntityManagerFactory("equities_master");
-	    EntityManager em = emf.createEntityManager();
-
-	        
-	    
-	    //Start transaction
-	    em.getTransaction().begin();
-	    
-	    //End transaction
-	    em.getTransaction().commit();
-	    em.close();
-	}
-
 	
 }

@@ -7,7 +7,7 @@ import java.util.Vector;
 
 public interface DispatcherInterface extends Remote
 {
-	public enum Job {FILL_DATABASE,UPDATE_HISTORIC_DATA};
+	public enum Job {FILL_DATABASE,UPDATE_HISTORIC_DATA,UPDATE_NEW_DATA};
 	public enum Exchange {NYSE,NASDAQ};
 	
 	public int Register(String hostAdress, String workerName, int rmiPort) throws RemoteException;

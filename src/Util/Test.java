@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.TimeZone;
 
@@ -22,12 +23,15 @@ import Database.DailyPrice;
 import Database.DataVendor;
 import Database.Exchange;
 import Database.Symbol;
+import Dispatcher.DispatcherInterface.Job;
 
 public class Test 
 {
  
   public static void main(String[] args) throws IOException 
   {
+	  /*
+	  
 	  	String startTime;
 	  	String endTime;
 	  
@@ -46,6 +50,7 @@ public class Test
 	    Timestamp mostRecentTime =  mostRecentTimeQuery.getSingleResult();
 	    Date mostRecentDate = new Date(mostRecentTime.getTime());
 	    
+	    //Closing transaction
 	    em.getTransaction().commit();
 	    em.close();
 	    
@@ -63,21 +68,39 @@ public class Test
 	    		cal.add(Calendar.DATE, 1);
 	    		
 	    		startTime = df.format(cal.getTime());
-	    		endTime = df.format(now);
-	    		
+	    		endTime = df.format(now);  		
          	}
 	    	else
 	    	{
+	    		cal.setTime(mostRecentDate);
+	    		cal.add(Calendar.DATE, 1);
 	    		
+	    		startTime = df.format(cal.getTime());
+	    		
+	    		cal.setTime(now);
+	    		cal.add(Calendar.DATE, -1);
+	    		
+	    		endTime = df.format(cal.getTime());
 	    	}
+	    	
+	    	
+	    	//Create ticker vector
+	    	Vector<String> symbolTicker = new Vector<String>();
+	    	
+		    for(int i=0; i<symbolList.size(); ++i)
+		    {
+		    	symbolTicker.add(i, "\"" + symbolList.get(i).getTicker() + "\"");
+		    }
+
+		    //Process
+		    result = client.Process(symbolTicker, args[4], args[5], null, Job.UPDATE_NEW_DATA);
+	    	
 	    }
 	    else
 	    {
 	    	System.out.println("Problem!");
 	    }
 	    
-	   
-
-	    
+	   */
   }
 } 

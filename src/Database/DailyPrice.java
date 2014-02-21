@@ -112,4 +112,24 @@ public class DailyPrice implements Serializable
 	   symbol_=symbol;
    }
    
+   public float getLow()
+   {
+	   return lowPrice_;
+   }
+   
+   public float getHigh()
+   {
+	   return highPrice_;
+   }
+   
+   public float getOpen()
+   {
+	   return openPrice_;
+   }
+   
+   public float getClose()
+   {
+	   return  closePrice_;
+   }
+   
 }
