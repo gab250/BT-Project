@@ -1,0 +1,1 @@
+java -cp /home/ubuntu/BT-Project/dist/Client.jar -Djava.security.policy=../policy Client.Client 127.0.0.1 5001 -u

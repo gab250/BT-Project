@@ -20,13 +20,19 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import Util.Email;
 import Util.YahooAPI;
 
 import Database.DailyPrice;
+import Database.DatabaseCommonQuery;
 import Database.Symbol;
 import Dispatcher.DispatcherInterface;
 import Dispatcher.DispatcherInterface.Job;
 
+/**
+ * @author Gabriel
+ *
+ */
 public class Client 
 {
 	private DispatcherInterface dispatcher_;
@@ -110,34 +116,20 @@ public class Client
 			    em.getTransaction().commit();
 			    em.close();
 			    
-			    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/New-York"));
+			    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("EST"));
 			    Date now = cal.getTime();
 			    
 			    if(now.after(mostRecentDate))
 			    {
 			    	//Construct time interval
 		    		DateFormat df = new SimpleDateFormat("yyyy-MM-dd"); 
-			    	
-			    	//if(now.getHours() >= 18)
-			    	//{
+			    	df.setTimeZone(TimeZone.getTimeZone("EST"));
+
 		    		cal.setTime(mostRecentDate);
 		    		cal.add(Calendar.DATE, 1);
 		    		
 		    		startTime = df.format(cal.getTime());
 		    		endTime = df.format(now);  		
-		         	//}
-			    	//else
-			    	//{
-			    	//	cal.setTime(mostRecentDate);
-			    	//	cal.add(Calendar.DATE, 1);
-			    		
-			    	//	startTime = df.format(cal.getTime());
-			    		
-			    	//	cal.setTime(now);
-			    	//	cal.add(Calendar.DATE, -1);
-			    		
-			    	//	endTime = df.format(cal.getTime());
-			    	//}
 			    				    	
 			    	//Create ticker vector
 			    	for(int i=0; i<symbolList.size(); ++i)
@@ -148,6 +140,12 @@ public class Client
 				    //Process
 				    result = client.Process(new Vector<String>(symbolList), startTime, endTime, null, Job.UPDATE_NEW_DATA);
 				    
+				    //Send report
+				    String[] recipients = new String[1];
+				    recipients[0]="gabriel.laprise@outlook.com";
+				    
+				    client.sendReport(recipients);
+				   				   
 			    }
 			}
 						
@@ -258,6 +256,32 @@ public class Client
 		}
 		
 		dispatcher_= stub;
+	}
+	
+	public void sendReport(String[] recipients)
+	{
+		//Send stats
+	    String subject = "Master securities DB updated";
+	    String body = "";
+	    
+	    //Time
+	    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("EST"));
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+        df.setTimeZone(TimeZone.getTimeZone("EST"));
+	    
+        body+="Time of completion : " + df.format(cal.getTime()) + System.getProperty("line.separator");
+        body+="New Database Stats" + System.getProperty("line.separator");
+        body+=System.getProperty("line.separator");
+        body+="Number of rows in daily_price table : " + Long.toString(DatabaseCommonQuery.rowsInDailyPrice()) + System.getProperty("line.separator");
+        body+=System.getProperty("line.separator");
+        body+="Number of rows in symbol table : " + Long.toString(DatabaseCommonQuery.rowsInSymbol()) + System.getProperty("line.separator");
+        body+=System.getProperty("line.separator");
+        body+="Most Recent date for NYSE : " + DatabaseCommonQuery.mostRecentDataNYSE().toString() + System.getProperty("line.separator");
+        body+=System.getProperty("line.separator");
+        body+="Most Recent date for NASDAQ : " + DatabaseCommonQuery.mostRecentDataNASDAQ().toString() + System.getProperty("line.separator");
+        body+=System.getProperty("line.separator");
+        
+	    Email.sendFromGMail("gabriel.laprise", "GAla25!!",recipients, subject, body);
 	}
 	
 }
