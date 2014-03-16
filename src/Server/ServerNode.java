@@ -38,7 +38,7 @@ public class ServerNode implements ServerNodeInterface {
 		//Getting public IPv4 address
 		try
 		{
-		     URL myIP = new URL("http://api.externalip.net/ip/");
+		     URL myIP = new URL("http://icanhazip.com/");
 		     BufferedReader in = new BufferedReader(
 		                          new InputStreamReader(myIP.openStream()));
 		     publicIpAdress = in.readLine();

@@ -41,11 +41,16 @@ public class Client
 	{
 		Client client = new Client();
 		client.loadDispatcherStub(args[0],Integer.valueOf(args[1]));
-		  	
+		
+		System.out.println(args[2]);
+		//System.out.println(args[3]);
+		
 		if(args[2].equals("-u"))
 		{
 			Dispatcher.DispatcherInterface.Exchange exchange=null;
 			int result = 0;		
+			
+			System.out.println(Integer.toString(args.length));
 			
 			if(args.length > 3)
 			{
@@ -97,7 +102,7 @@ public class Client
 				String startTime = null;
 				String endTime = null;
 			  
-			    //Starting transaction
+				//Starting transaction
 				EntityManagerFactory factory = Persistence.createEntityManagerFactory("equities_master");
 			    EntityManager em = factory.createEntityManager();
 			    
@@ -136,8 +141,8 @@ public class Client
 				    {
 				    	symbolList.set(i, "\"" + symbolList.get(i) + "\"");
 				    }
-
-				    //Process
+			    	
+			    	//Process
 				    result = client.Process(new Vector<String>(symbolList), startTime, endTime, null, Job.UPDATE_NEW_DATA);
 				    
 				    //Send report
@@ -145,7 +150,12 @@ public class Client
 				    recipients[0]="gabriel.laprise@outlook.com";
 				    
 				    client.sendReport(recipients);
-				   				   
+				    
+				 
+			    }
+			    else
+			    {
+			    	System.out.println("System already up to date.");
 			    }
 			}
 						
